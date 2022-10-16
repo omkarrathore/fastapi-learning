@@ -1,16 +1,21 @@
 import sys
 sys.path.append('../')
 
-from fastapi import  Depends, HTTPException,APIRouter #FastAPI,
+from fastapi import Depends, HTTPException,APIRouter #FastAPI,
 import models
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional
-from auth import get_current_user,get_user_exception
+from .auth import get_current_user, get_user_exception
 
 #app = FastAPI()
-route = APIRouter()
+router = APIRouter(
+    prefix="/todos",
+    tags=["todos"],
+    responses={404: {"description":"Not Found"}}
+)
+
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -33,14 +38,14 @@ async def read_all(db:Session = Depends(get_db)):
     #return {"Database":"Create"}
     return db.query(models.Todos).all()
     
-@router.get('/todos/user')
+@router.get('/user')
 async def read_all_by_user(user: dict = Depends(get_current_user), db:Session = Depends(get_db)):
     if user is None:
         raise get_user_exception()
     return db.query(models.Todos).filter(models.Todos.owner_id == user.get("id")).all()
 
 
-@router.get("/todo/{todo_id}")
+@router.get("/{todo_id}")
 async def read_todo(todo_id:int, user:dict = Depends(get_current_user), db:Session = Depends(get_db)):
     if user is None:
         raise get_user_exception()
